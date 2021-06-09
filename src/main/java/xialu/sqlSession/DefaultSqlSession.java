@@ -64,17 +64,50 @@ public class DefaultSqlSession implements SqlSession {
 
     @Override
     public int insert(String statementId, Object... params) throws Exception {
-        return 0;
+        /**
+         * 获取执行器.
+         */
+        Executor executor = new SimpleExecutor();
+        /**
+         * 获取mappedStatement.
+         */
+        MappedStatement mappedStatement = configuration.getStatementMap().get(statementId);
+        /**
+         * 执行新增操作.
+         */
+        return executor.update(configuration, mappedStatement, params);
     }
 
     @Override
     public int update(String statementId, Object... params) throws Exception {
-        return 0;
+        /**
+         * 获取执行器.
+         */
+        Executor executor = new SimpleExecutor();
+        /**
+         * 获取mappedStatement.
+         */
+        MappedStatement mappedStatement = configuration.getStatementMap().get(statementId);
+        /**
+         * 执行新增操作.
+         */
+        return executor.update(configuration, mappedStatement, params);
     }
 
     @Override
     public int delete(String statementId, Object... params) throws Exception {
-        return 0;
+        /**
+         * 获取执行器.
+         */
+        Executor executor = new SimpleExecutor();
+        /**
+         * 获取mappedStatement.
+         */
+        MappedStatement mappedStatement = configuration.getStatementMap().get(statementId);
+        /**
+         * 执行新增操作.
+         */
+        return executor.update(configuration, mappedStatement, params);
     }
 
     @Override
@@ -100,11 +133,14 @@ public class DefaultSqlSession implements SqlSession {
 
                     switch (type) {
                         case DELETE:
-                            break;
+                            int delete = delete(statementId, args);
+                            return delete;
                         case INSERT:
-                            break;
+                            int insert = insert(statementId, args);
+                            return insert;
                         case UPDATE:
-                            break;
+                            int update = update(statementId, args);
+                            return update;
                         case SELECT:
                             /**
                              * 获取被调用方法的返回值类型

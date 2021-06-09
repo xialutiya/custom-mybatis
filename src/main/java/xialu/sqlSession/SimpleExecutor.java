@@ -137,6 +137,84 @@ public class SimpleExecutor implements Executor {
         return (List<E>) results;
     }
 
+    @Override
+    public int update(Configuration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
+
+        /**
+         * 1. 注册驱动,获取数据库连接.
+         */
+        Connection connection = configuration.getDataSource().getConnection();
+
+        /**
+         * 2.获取sql语句：select id, name from study where name = #{name}
+         */
+        String sql = mappedStatement.getSql();
+        /**
+         * 3.解析sql语句,将占位符替换成问号,并获取占位符中的属性字段：select id, name from study where name = ?
+         */
+        BoundSql boundSql = getBoundSql(sql);
+
+        /**
+         * 5.获取预处理对象：preparedStatement
+         */
+        PreparedStatement preparedStatement = connection.prepareStatement(boundSql.getSqlText());
+
+        /**
+         * 6.获取参数全限定名.
+         */
+        String paramterType = mappedStatement.getParamterType();
+        /**
+         * 7.根据全限定名获取参数class类.
+         */
+        Class<?> paramtertypeClass = getClassType(paramterType);
+
+        /**
+         * sql语句中的字段集合.
+         */
+        List<ParameterMapping> parameterMappingList = boundSql.getParameterMappingList();
+
+        for (int i = 0; i < parameterMappingList.size(); i++) {
+            Object o = null;
+            /**
+             * 判断类型是否是基本数据类型,包装类型,字符串类型.
+             */
+            if (!isPrimitive(paramtertypeClass)) {
+                /**
+                 *  8.获取参数字段.
+                 */
+                ParameterMapping parameterMapping = parameterMappingList.get(i);
+                String content = parameterMapping.getContent();
+
+                /**
+                 * 9.反射获取字段实例.
+                 */
+                Field declaredField = paramtertypeClass.getDeclaredField(content);
+                /**
+                 * 私有属性允许访问.
+                 */
+                declaredField.setAccessible(true);
+                /**
+                 * 10.获取字段对应的值(入参).
+                 */
+                o = declaredField.get(params[0]);
+            } else {
+                o = params[0];
+            }
+            /**
+             * 11.添加参数.
+             */
+            preparedStatement.setObject(i + 1, o);
+
+        }
+
+        /**
+         * 返回更新数据数量.
+         */
+        int update = preparedStatement.executeUpdate();
+
+        return update;
+    }
+
     /**
      * 根据全限定名获取class类.
      *
@@ -210,5 +288,20 @@ public class SimpleExecutor implements Executor {
                 }));
     }
 
-
+    /**
+     * 判断类是否是基本数据类型，包装类型，字符串类型。
+     *
+     * @param clazz
+     * @return
+     */
+    private boolean isPrimitive(Class<?> clazz) {
+        try {
+            if (clazz.isPrimitive() || clazz == String.class) {
+                return true;
+            }
+            return ((Class<?>) clazz.getField("TYPE").get(null)).isPrimitive();
+        } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
+            return false;
+        }
+    }
 }
