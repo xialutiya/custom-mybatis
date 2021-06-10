@@ -112,14 +112,19 @@ public class DefaultSqlSession implements SqlSession {
 
     @Override
     public <T> T getMapper(Class<?> mapperClass) {
-        // 使用JDK动态代理来为Dao接口生成代理对象，并返回
 
+        /**
+         * 返回mapperClass的代理对象.
+         */
         Object proxyInstance = Proxy.newProxyInstance(DefaultSqlSession.class.getClassLoader(),
-                new Class[]{mapperClass}, (InvocationHandler) (proxy, method, args) -> {
-                    // 底层都还是去执行JDBC代码 //根据不同情况，来调用selctList或者selectOne
-                    // 准备参数 1：statmentid :sql语句的唯一标识：namespace.id= 接口全限定名.方法名
-                    // 方法名：findAll
+                new Class[]{mapperClass}, (proxy, method, args) -> {
+                    /**
+                     * 方法名：例如deleteById
+                     */
                     String methodName = method.getName();
+                    /**
+                     * deleteById方法所在class的全限定名.例如：xialu.mapper.StudyMapper
+                     */
                     String className = method.getDeclaringClass().getName();
 
                     String statementId = className + "." + methodName;

@@ -59,5 +59,4 @@ public interface SqlSession {
      */
     <T> T getMapper(Class<?> mapperClass);
 
-
 }
